@@ -1,0 +1,213 @@
+/*  PROCESSINGJS.COM - BOX2D.JS  
+
+    Newton's Cradle in Processing.js with Box2D.js
+
+    Hyper-Metrix.com/F1LT3R   */  
+
+
+
+// Set up the Box2D World
+
+var worldAABB = new b2AABB();
+
+    worldAABB.minVertex.Set(-1000, -1000);
+
+    worldAABB.maxVertex.Set(1000, 1000);
+
+var gravity   = new b2Vec2(0, 300);
+
+var doSleep   = true;
+
+var world     = new b2World(worldAABB, gravity, doSleep);
+
+
+
+// Get form values for balls |or| Define the number of balls and create the object array 
+
+int balls;
+
+if ( props.balls ) { balls = props.balls; }
+
+else { balls = 6; }
+
+
+
+Object[][] ball = new Object[balls][4];
+
+
+
+// Get form values for restitution
+
+int rest;
+
+if ( props.rest ) { rest = props.rest; }
+
+else { rest = .9; }
+
+
+
+// Get form values for radius
+
+int radius;
+
+if ( props.radius ) { radius = props.radius; }
+
+else { radius = 10; }
+
+
+
+// Get form values for force
+
+int force;
+
+if ( props.force ) { force = props.force; }
+
+else { force = 5000; }
+
+
+
+// Iterate through, creating new balls and joints
+
+for(int i=0; i &lt; balls; i++){
+
+  
+
+  // Set the XY pos for the balls
+
+  int x=(i*41)+55, y=50;
+
+    
+
+  // Create a Box2D circle
+
+  ball[i][0]=new b2CircleDef();
+
+  ball[i][0].density = 10;
+
+  ball[i][0].radius = radius*2;
+
+  ball[i][0].restitution = rest;
+
+  ball[i][0].friction = 1;    
+
+  
+
+  // Create Box2D Body for Circle
+
+  ball[i][1]=new b2BodyDef();
+
+  ball[i][1].AddShape(ball[i][0]);
+
+  ball[i][1].position.Set(x,y+125);    
+
+  ball[i][2]=world.CreateBody(ball[i][1]);
+
+    
+
+  // Create Box2D joint
+
+  ball[i][3]=new b2RevoluteJointDef();
+
+  ball[i][3].anchorPoint.Set(x,y);
+
+  ball[i][3].body1 = world.GetGroundBody();
+
+  ball[i][3].body2 = ball[i][2];
+
+  world.CreateJoint(ball[i][3]);
+
+}
+
+
+
+// Set up the animation speed and the calculations per frame 
+
+var timeStep = 1.0/30;
+
+var iteration = 12;
+
+
+
+// Set up the Processing.js Canvas
+
+void setup(){
+
+  size(320,240);
+
+  frameRate(60);
+
+  stroke(255); 
+
+} 
+
+
+
+// Define color range
+
+color color1 = color(255,0,0,100);
+
+color color2 = color(0,255,0,100);
+
+
+
+// Begin the draw loop
+
+void draw(){
+
+  
+
+  // Clear the background and fill with transparent grey
+
+  clear();
+
+  background(100,100,100,200);  
+
+  
+
+  // Ask Box2D to calculate another step in the world
+
+  world.Step(timeStep, iteration);
+
+  
+
+  // Loop through the ball array and draw everything
+
+  for(int i=0; i &lt; balls; i++){    
+
+    b=ball[i];
+
+    line(b[3].anchorPoint.x,b[3].anchorPoint.y,b[2].m_position.x,b[2].m_position.y);
+
+    fill(lerpColor(color1,color2,1/balls*i));
+
+    rect(b[3].anchorPoint.x-10,b[3].anchorPoint.y-10,20,20);
+
+    ellipse(b[2].m_position.x,b[2].m_position.y,b[0].radius*2,b[0].radius*2);
+
+  }
+
+}
+
+
+
+// Apply an impulse to force any ball left when clicked on 
+
+void mouseClicked(){
+
+  for(int i=0; i &lt; balls; i++){
+
+    b=ball[i][2];
+
+    r=ball[i][0].radius;
+
+    if( dist(mouseX,mouseY,b.m_position.x,b.m_position.y)&lt;r ) {
+
+      b.WakeUp();
+
+      b.ApplyForce(new b2Vec2(0,2000000), new b2Vec2(force, b.m_position.y));
+
+    }
+
+  } 
+
+}
